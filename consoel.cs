@@ -2,7 +2,6 @@ using System;
 
 namespace JogoDeTurnos
 {
-    // Classe que representa qualquer combatente (Herói ou Monstro)
     class Personagem
     {
         public string Nome { get; set; }
@@ -17,12 +16,11 @@ namespace JogoDeTurnos
         {
             Nome = nome;
             Vida = vida;
-            VidaMaxima = vida; // Para não curar além do máximo
+            VidaMaxima = vida;
             Ataque = ataque;
-            PocaoCura = 2; // Começa com 2 poções
+            PocaoCura = 2;
             Mana = mana;
-            ManaMaxima = mana; // Não pode usar magia se for menor
-
+            ManaMaxima = mana;
         }
 
         public bool EstaVivo()
@@ -35,107 +33,177 @@ namespace JogoDeTurnos
     {
         static void Main(string[] args)
         {
-            // Setup Inicial
             Console.Title = "RPG de Console - Batalha Épica";
             Random dado = new Random();
 
-            Personagem heroi = new Personagem("Guerreiro", 100, 15, 15);
-            Personagem monstro = new Personagem("Orc", 80, 10, 20);
+            Personagem heroi = new Personagem("Guerreiro", 120, 12, 20);
+            Personagem monstro = new Personagem("Orc Chefe", 100, 10, 20);
 
-            Console.WriteLine($"Um {monstro.Nome} selvagem apareceu!");
+            Console.WriteLine($"Um {monstro.Nome} furioso apareceu!");
 
-            // Game Loop (Loop Principal)
             while (heroi.EstaVivo() && monstro.EstaVivo())
             {
-                Console.WriteLine("\n--- SEU TURNO ---");
-                Console.WriteLine($"{heroi.Nome} (HP: {heroi.Vida}/{heroi.VidaMaxima}) vs {monstro.Nome} (HP: {monstro.Vida})");
-                Console.WriteLine("Escolha: (A) Atacar (B) Curar (C) Magia?");
+                Console.WriteLine("\n========================================");
+                Console.WriteLine($"{heroi.Nome} (HP: {heroi.Vida}/{heroi.VidaMaxima} | MP: {heroi.Mana})"); 
+                Console.WriteLine("        VS");
+                Console.WriteLine($"{monstro.Nome} (HP: {monstro.Vida} | MP: {monstro.Mana})");
+                Console.WriteLine("========================================");
+                Console.WriteLine("Escolha: (A)tacar (M)agia (C)urar?");
                 
                 string escolha = Console.ReadLine().ToUpper();
 
-                // Lógica do Jogador
+                // --- TURNO DO JOGADOR ---
                 if (escolha == "A")
                 {
-                    // Dano variável (Ataque + aleatório entre -2 e 3)
-                    int dano = heroi.Ataque + dado.Next(-2, 4); 
-                    monstro.Vida -= dano;
-                    Console.WriteLine($"Você atacou o {monstro.Nome} e causou {dano} de dano!");
+                    int resultado = RolarD20(heroi.Nome, heroi.Ataque, dado, false);
+                    
+                    if (resultado > 0) {
+                        monstro.Vida -= resultado;
+                    } 
+                    else if (resultado < 0) { // Lógica de Erro Crítico Físico
+                        heroi.Vida += resultado; // Soma o negativo (diminui vida)
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"Você se feriu na confusão! Perdeu {Math.Abs(resultado)} de vida.");
+                        Console.ResetColor();
+                    }
+                }
+                else if (escolha == "M")
+                {
+                    int custoMagia = 5;
+                    if(heroi.Mana >= custoMagia) {
+                        heroi.Mana -= custoMagia; // Gasta a mana antes de rolar
+                        
+                        int resultado = RolarD20(heroi.Nome, 18, dado, true); // Dano base mágico alto
+                        
+                        if (resultado > 0) {
+                            monstro.Vida -= resultado;
+                        }
+                        else if (resultado < 0) { // Lógica de Erro Crítico Mágico
+                            heroi.Vida += resultado;
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"A magia instável explodiu em você! Perdeu {Math.Abs(resultado)} de vida.");
+                            Console.ResetColor();
+                        }
+                    } else {
+                        Console.WriteLine("Mana insuficiente! Perdeu o turno tentando concentrar...");
+                    }
                 }
                 else if (escolha == "C")
                 {
-                    if (heroi.Mana >= heroi.ManaMaxima && heroi.Mana > 0) {
-                        int danoMagia = heroi.Mana + dado.Next(-3, 8);
-                        heroi.Mana -= 10;
-                        monstro.Vida -= danoMagia;
-                        Console.WriteLine($"Você atacou o {monstro.Nome} com MAGIA e causou {danoMagia} de dano!!");
-                    } else {
-                        Console.WriteLine("Você não tem mais mana!");
-                    }
-
-                }
-                else if (escolha == "B")
-                {
                     if (heroi.PocaoCura > 0)
                     {
-                        int cura = 25;
+                        int cura = 30;
                         heroi.Vida += cura;
                         if (heroi.Vida > heroi.VidaMaxima) heroi.Vida = heroi.VidaMaxima;
                         heroi.PocaoCura--;
-                        Console.WriteLine($"Você bebeu uma poção. Recuperou {cura} HP. Restam {heroi.PocaoCura} poções.");
+                        Console.WriteLine($"Você bebeu uma poção. Recuperou {cura} HP. Restam {heroi.PocaoCura}.");
                     }
                     else
                     {
-                        Console.WriteLine("Você não tem mais poções! Perdeu o turno procurando na mochila...");
+                        Console.WriteLine("Mochila vazia! Sem poções.");
                     }
                 }
                 else
                 {
-                    Console.WriteLine("Comando inválido! Você tropeçou e perdeu a vez.");
+                    Console.WriteLine("Comando inválido! Você tropeçou.");
                 }
 
-                // Checagem de Vitória Imediata
                 if (!monstro.EstaVivo()) break;
 
-                // Turno do Inimigo
-                System.Threading.Thread.Sleep(1000); 
-                
+                // --- TURNO DO INIMIGO ---
                 Console.WriteLine("\n--- TURNO DO INIMIGO ---");
-                int decisaoMonstro = dado.Next(0,2);
+                System.Threading.Thread.Sleep(1000); 
 
-                int danoInimigo = 0;
+                bool monstroUsaMagia = (monstro.Mana >= 5 && dado.Next(0, 100) < 30);
+                int danoMonstro = 0;
 
-                if (decisaoMonstro == 0) {
-                    // --- ATAQUE FÍSICO ---
-                    danoInimigo = monstro.Ataque + dado.Next(-1, 3);
-                    Console.WriteLine($"O {monstro.Nome} avançou e te mordeu!");
-                    heroi.Vida -= danoInimigo;
-                    Console.WriteLine($"Você recebeu {danoInimigo} de dano!");
+                if (monstroUsaMagia) {
+                    Console.WriteLine($"O {monstro.Nome} está preparando um feitiço...");
+                    monstro.Mana -= 5;
+                    danoMonstro = RolarD20(monstro.Nome, 15, dado, true);
                 } else {
-                    // --- ATAQUE MAGICO ---
-                    if(monstro.Mana <= monstro.ManaMaxima && monstro.Mana > 0) {                        
-                        danoInimigo = monstro.Mana + dado.Next(-1, 3);
-                        monstro.Mana -= 10;
-                        Console.WriteLine($"O {monstro.Nome} conjurou uma magia sombria!");
-                        heroi.Vida -= danoInimigo;
-                        Console.WriteLine($"Você recebeu {danoInimigo} de dano!");
-                    } else {
-                        Console.WriteLine($"O {monstro.Nome} ficou sem mana!");
-                    }
+                    Console.WriteLine($"O {monstro.Nome} levantou a arma...");
+                    danoMonstro = RolarD20(monstro.Nome, monstro.Ataque, dado, false);
+                }
+
+                // APLICA O DANO DO MONSTRO (Seja no herói ou nele mesmo)
+                if (danoMonstro > 0) 
+                {
+                    heroi.Vida -= danoMonstro;
+                }
+                else if (danoMonstro < 0)
+                {
+                    monstro.Vida += danoMonstro; // Monstro se machuca
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"O {monstro.Nome} se atrapalhou e tomou {Math.Abs(danoMonstro)} de dano!");
+                    Console.ResetColor();
                 }
             }
 
             // Fim de Jogo
             Console.WriteLine("\n--------------------------");
-            if (heroi.EstaVivo())
-            {
+            if (heroi.EstaVivo()) {
                 Console.WriteLine($"VITÓRIA! O {monstro.Nome} foi derrotado!");
             }
-            else
-            {
+            else {
                 Console.WriteLine("DERROTA... Seu herói caiu em combate.");
             }
             
             Console.ReadKey();
+        }
+
+        static int RolarD20(string nomeAtacante, int poderBase, Random dado, bool ehMagia) {
+            int d20 = dado.Next(1, 2); 
+            
+            Console.Write($"{nomeAtacante} rolou D20: ");
+
+            if (d20 == 20) Console.ForegroundColor = ConsoleColor.Yellow;
+            else if (d20 == 1) Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"[{d20}]");
+            Console.ResetColor();
+
+            int danoFinal = 0;
+
+            if (d20 == 20) // CRÍTICO
+            {
+                danoFinal = poderBase * 2;
+                Console.WriteLine(">>> ACERTO CRÍTICO! DANO DOBRADO! <<<");
+            }
+            else if (d20 >= 15) // FORTE
+            {
+                danoFinal = poderBase + (d20 / 3);
+                Console.WriteLine("Um golpe brutal e preciso!");
+            }
+            else if (d20 >= 8) // NORMAL
+            {
+                danoFinal = poderBase;
+                Console.WriteLine("Acertou em cheio.");
+            }
+            else if (d20 >= 2) // RASPÃO
+            {
+                danoFinal = poderBase / 2;
+                Console.WriteLine("Passou de raspão... Dano reduzido.");
+            }
+            else // D20 == 1 (ERRO CRÍTICO)
+            {
+                danoFinal = 0;
+                Console.ForegroundColor = ConsoleColor.Red;
+                
+                if (ehMagia) {
+                    Console.WriteLine($"A magia explodiu na cara de quem lançou!");
+                } else {
+                    Console.WriteLine($"Errou feio! Tropeçou e caiu.");
+                }
+                Console.ResetColor();
+                
+                // Retorna negativo para sinalizar auto-dano
+                return -(poderBase / 2); 
+            }
+
+            if (danoFinal > 0)
+                Console.WriteLine($"Resultado: Causou {danoFinal} de dano.");
+            
+            return danoFinal;
         }
     }
 }
