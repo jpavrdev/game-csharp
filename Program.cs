@@ -12,6 +12,9 @@ namespace JogoDeTurnos
         public int PocaoCura { get; set; }
         public int Mana { get; set; }
         public int ManaMaxima { get; set; }
+        public int Nivel { get; set; }
+        public int Xp { get; set; }
+        public int XpProximoNivel { get; set; }
 
         public Personagem(string nome, int vida, int ataque, int mana)
         {
@@ -22,6 +25,9 @@ namespace JogoDeTurnos
             PocaoCura = 3; // Começa com 3 poções
             Mana = mana;
             ManaMaxima = mana;
+            Nivel = 1;
+            Xp = 0;
+            XpProximoNivel = 100;
         }
 
         public bool EstaVivo()
@@ -81,7 +87,7 @@ namespace JogoDeTurnos
                     Console.WriteLine($"=== SALA {monstrosDerrotados} ===");
                     Console.WriteLine("\n-------------------------------------------------");
                     Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine($" {heroi.Nome.PadRight(15)} | HP: {heroi.Vida}/{heroi.VidaMaxima} | MP: {heroi.Mana}/{heroi.ManaMaxima} | Pots: {heroi.PocaoCura}");
+                    Console.WriteLine($" {heroi.Nome.PadRight(15)} Lvl {heroi.Nivel}  | HP: {heroi.Vida}/{heroi.VidaMaxima} | MP: {heroi.Mana}/{heroi.ManaMaxima} | Pots: {heroi.PocaoCura}");
                     Console.ResetColor();
                     Console.WriteLine($"       VS");
                     Console.ForegroundColor = ConsoleColor.Red;
@@ -194,6 +200,30 @@ namespace JogoDeTurnos
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine($"\nVITÓRIA! O {monstro.Nome} foi eliminado!");
                     Console.ResetColor();
+
+                    int xpGanho = 50 + (monstrosDerrotados * 10);
+                    heroi.Xp += xpGanho;
+                    Console.WriteLine($"Você ganhou {xpGanho} XP!");
+
+                    if (heroi.Xp >= heroi.XpProximoNivel) {
+                        heroi.Nivel++;
+                        heroi.Xp -= heroi.XpProximoNivel; // Sobra o resto do XP
+                        heroi.XpProximoNivel += 50; // Próximo nível é mais difícil
+
+                        // Melhora os status
+                        heroi.VidaMaxima += 20;
+                        heroi.ManaMaxima += 10;
+                        heroi.Ataque += 2;
+                        
+                        // Cura total ao upar
+                        heroi.Vida = heroi.VidaMaxima;
+                        heroi.Mana = heroi.ManaMaxima;
+
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.WriteLine($"\nLEVEL UP! Você alcançou o nível {heroi.Nivel}!");
+                        Console.WriteLine($"Seus status aumentaram! Vida Max: {heroi.VidaMaxima} | Ataque: {heroi.Ataque}");
+                        Console.ResetColor();
+                        }
 
                     // Recompensas
                     Console.WriteLine("Você descansou brevemente...");
