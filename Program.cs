@@ -15,6 +15,7 @@ namespace JogoDeTurnos
         public int Nivel { get; set; }
         public int Xp { get; set; }
         public int XpProximoNivel { get; set; }
+        public int Ouro { get; set; }
 
         public Personagem(string nome, int vida, int ataque, int mana)
         {
@@ -28,6 +29,7 @@ namespace JogoDeTurnos
             Nivel = 1;
             Xp = 0;
             XpProximoNivel = 100;
+            Ouro = 0;
         }
 
         public bool EstaVivo()
@@ -104,7 +106,7 @@ namespace JogoDeTurnos
                     string escolha = (Console.ReadLine() ?? "Z").ToUpper();
                     Console.WriteLine(); // Pula linha
 
-                    // 1. TURNO DO JOGADOR
+                    // TURNO DO JOGADOR
                     if (escolha == "A")
                     {
                         int resultado = RolarD20(heroi.Nome, heroi.Ataque, dado, false);
@@ -201,9 +203,19 @@ namespace JogoDeTurnos
                     Console.WriteLine($"\nVITÓRIA! O {monstro.Nome} foi eliminado!");
                     Console.ResetColor();
 
-                    int xpGanho = 50 + (monstrosDerrotados * 10);
-                    heroi.Xp += xpGanho;
-                    Console.WriteLine($"Você ganhou {xpGanho} XP!");
+                    if (nomeSorteado == "Dragão Jovem") {
+                        int xpGanho = (50 + (monstrosDerrotados * 10)) * 2; // ao matar o dragão recebe o dobro de ouro e xp
+                        int ouroGanho = (50 + (monstrosDerrotados * 10)) * 2;
+                        heroi.Xp += xpGanho;
+                        heroi.Ouro += ouroGanho;
+                        Console.WriteLine($"Você ganhou {xpGanho} XP e {ouroGanho} de OURO!!");
+                    } else {
+                        int xpGanho = 50 + (monstrosDerrotados * 10);
+                        int ouroGanho = 50 + (monstrosDerrotados * 10);
+                        heroi.Xp += xpGanho;
+                        heroi.Ouro += ouroGanho;
+                        Console.WriteLine($"Você ganhou {xpGanho} XP e {ouroGanho} de OURO!!");
+                    }
 
                     if (heroi.Xp >= heroi.XpProximoNivel) {
                         heroi.Nivel++;
@@ -239,6 +251,7 @@ namespace JogoDeTurnos
                         Console.WriteLine("Você encontrou uma Poção de Cura nos espólios!");
                     }
 
+                    Loja(heroi);
                     Console.WriteLine("\nDeseja avançar para a próxima sala? (S/N)");
                     string continuar = (Console.ReadLine() ?? "").ToUpper();
                     if (continuar == "N") jogoRodando = false;
@@ -256,8 +269,7 @@ namespace JogoDeTurnos
         }
 
         // --- FUNÇÃO DO DADO: Retorna valor positivo, para dano do inimigo ou valor negativo, para dano em si mesmo
-        static int RolarD20(string nome, int poderBase, Random dado, bool ehMagia)
-        {
+        static int RolarD20(string nome, int poderBase, Random dado, bool ehMagia) {
             int d20 = dado.Next(1, 21);
             
             Console.Write($"{nome} rolou D20 [{d20}] -> ");
@@ -301,6 +313,57 @@ namespace JogoDeTurnos
             if (danoFinal > 0) Console.WriteLine($"Causou {danoFinal} de dano.");
             
             return danoFinal;
+        }
+
+        static void Loja(Personagem heroi) {
+
+            while(true) {
+                Console.Clear();
+                Console.WriteLine("=== O VENDEDOR ITINERANTE APARECEU ===");
+                Console.WriteLine($"Você possui {heroi.Ouro} de ouro!");
+                Console.WriteLine("O que desejas, caro viajante?");
+                Console.WriteLine("A) Comprar poção (40g).");
+                Console.WriteLine("B) Afiar espada: +1 de dano permanente (100g).");
+                Console.WriteLine("C) Sair.");
+
+            string comprar = (Console.ReadLine() ?? "").ToUpper();
+
+            switch (comprar) {
+                case "A":
+                    if (heroi.Ouro >= 40) {
+                        heroi.PocaoCura += 1;
+                        heroi.Ouro -= 40;
+                        Console.WriteLine($"\nNegócio fechado! Agora você tem {heroi.PocaoCura} poções.");
+                    } else {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\nVocê não possui ouro suficiente.");
+                        Console.ResetColor();
+                    }
+                    Console.ReadKey();
+                    break;
+                case "B":
+                    if (heroi.Ouro >= 100) {
+                        int ataqueAnterior = heroi.Ataque;
+                        heroi.Ataque += 1;
+                        heroi.Ouro -=  100;
+                        Console.WriteLine($"\nEspada afiada! Ataque subiu de {ataqueAnterior} para {heroi.Ataque}.");
+                    } else {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\nVocê não possui ouro suficiente.");
+                        Console.ResetColor();
+                    }
+                    Console.ReadKey();
+                    break;
+                case "C":
+                    Console.WriteLine("Volte sempre!");
+                    Console.ReadKey();
+                    return;
+                default:
+                    Console.WriteLine("\nOpção inválida!");
+                    Console.ReadKey();
+                    break;
+                }
+            }
         }
     }
 }
